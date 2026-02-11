@@ -39,6 +39,21 @@ Asagidaki adimlarda `{SKILL_DIR}` gecen her yerde bu dizini kullan.
 
 ---
 
+## Katman Mimarisi
+
+Veri ambari 4 katmandan olusur, her katmanin ayri bir veritabani semasi vardir:
+
+| Katman | Sema | Aciklama |
+|--------|------|----------|
+| Mirror | **ODS** | Kaynak sistemlerden birebir kopyalanan ham veri |
+| Foundation | **DWH** | Star schema modeline donusturulmus analitik veri |
+| Staging | **STG** | Ara donusum tablolari |
+| Logging | **ETL** | ETL surec loglari |
+
+Mapping sureci **ODS → DWH** donusumunu tanimlar.
+
+---
+
 ## Workflow
 
 Bu skill 6 adimdan olusur. Her adimi sirasiyla takip et.
@@ -99,9 +114,9 @@ Kullanim senaryosu dosyasini oku ve analiz et:
 
 1. **Mantiksal tablo adlarini cikar** — Veri sozlugundeki her veri grubunu belirle
 2. **Fact/Dim/Bridge siniflandirmasi yap** — Bu dosyanin "Mapping Kurallari" bolumune bak:
-   - Transactional/event verisi → **fact_**
-   - Referans/lookup verisi → **dim_**
-   - M:N iliski tablolari → **bridge_**
+   - Transactional/event verisi → **f_**
+   - Referans/lookup verisi → **d_**
+   - M:N iliski tablolari → **b_**
 3. **Senaryo adimlarini hedef tablolarla eslestir** — Her senaryo adiminin hangi tablolara ihtiyac duydugunu belirle
 4. **Metadata ile karsilastir** — Mantiksal tablolarin fiziksel karsiliklari metadata'da var mi kontrol et
 
@@ -130,7 +145,7 @@ python {SKILL_DIR}/scripts/generate_mapping.py \
 ```
 
 Script, olusturulan mapping verisini 13 sutunluk standart formatta Excel'e yazar:
-- Star schema naming convention (fact_, dim_, bridge_)
+- Star schema naming convention (f_, d_, b_)
 - Renk kodlama: fact=mavi (#DBEEF4), dim=yesil (#E2EFDA), bridge=sari (#FFF2CC)
 - Header stili, freeze pane, auto-filter
 
@@ -170,29 +185,84 @@ Rapor icerigi:
 
 ## Mapping Kurallari
 
+### Katman Sema Kurallari
+
+| Katman | Sema | Tablo Prefix Ornegi |
+|--------|------|---------------------|
+| ODS (Mirror) | `ODS` | Kaynak sistem ismi prefix: `kky_zkky_iybs_0288`, `ytp_musteri` |
+| DWH (Foundation) | `DWH` | Star schema prefix: `f_tasima`, `d_musteri` |
+| STG (Staging) | `STG` | Ara tablolar |
+| ETL (Logging) | `ETL` | Log tablolari |
+
 ### Star Schema Siniflandirma
 
 | Tip | On Ek | Icerik | Ornekler |
 |-----|-------|--------|----------|
-| Fact | `fact_` | Transactional/event verisi, olculebilir metrikler | kazalar, riskler, denetimler |
-| Dimension | `dim_` | Referans/lookup verisi, yavas degisen boyutlar | personel, birimler, hat/istasyon |
-| Bridge | `bridge_` | M:N iliskileri cozen kesisim tablolari | kaza-kok_neden, tehlike-tedbir |
+| Fact (Olgu) | `f_` | Transactional/event verisi, olculebilir metrikler | f_tasima, f_kaza, f_denetim |
+| Dimension (Boyut) | `d_` | Referans/lookup verisi, yavas degisen boyutlar | d_musteri, d_birim, d_istasyon |
+| Bridge (Kopru) | `b_` | M:N iliskileri cozen kesisim tablolari | b_kaza_kokneden, b_tehlike_tedbir |
 
 ### Naming Conventions
 
-- **Hedef tablo**: `fact_{isim}`, `dim_{isim}`, `bridge_{isim1}_{isim2}`
-- **Hedef attribute**: snake_case, Turkce karakter yok (s→s, c→c, g→g, i→i, o→o, u→u)
-- **FK sutun**: `fk_{hedef_tablo}_id` — Ornek: `fk_dim_birim_id`
+**Genel kurallar:**
+- Tum tablo ve kolon isimlerinde **Turkce karakter kullanilmaz** (s→s, c→c, g→g, i→i, o→o, u→u)
+- Tum tablo ve kolon isimlerinde **kucuk harf (lowercase)** kullanilir (Iceberg ve Trino gerekliligi)
+- Kaynak sutun adini mumkun oldugunca koru, sadece convention'a uygun hale getir
 
-### Audit Sutunlari
+**Hedef tablo isimlendirme:**
+- `f_{isim}` — Ornek: f_tasima, f_kaza, f_risk
+- `d_{isim}` — Ornek: d_musteri, d_birim, d_hat
+- `b_{isim1}_{isim2}` — Ornek: b_kaza_kokneden
 
-**PostgreSQL:** created_by→olusturan_kullanici, created_date→olusturma_tarihi, modified_by→guncelleyen_kullanici, modified_date→guncelleme_tarihi
-**MSSQL:** ek→olusturan_kullanici, ektar→olusturma_tarihi, gun→guncelleyen_kullanici, guntar→guncelleme_tarihi
-**Ek:** etl_yuklenme_tarihi, etl_kaynak_sistem (tum tablolara)
+**ODS katmani tablo isimlendirme:**
+- Kaynak sistem ismi prefix olarak kullanilir
+- Ornek: `kky_zkky_iybs_0288`, `ytp_musteri`
 
-### Soft Delete
+**Kolon postfix kurallari:**
 
-Kaynak: sil (flag), siltar (datetime), fk_durum. Hedef: mapping'e dahil, ETL'de WHERE sil=0 filtresi.
+| Alan Tipi | Postfix | Ornek |
+|-----------|---------|-------|
+| ID kolonlari (PK/FK) | `_id` | musteri_id, vagon_id |
+| Kod alanlari | `_kodu` | vagon_kodu, istasyon_kodu |
+| Ad alanlari | `_adi` | musteri_adi, istasyon_adi |
+| Durum alanlari | `_durumu` | siparis_durumu, kayit_durumu |
+| Tip alanlari | `_tipi` | vagon_tipi, kaza_tipi |
+| Adet alanlari | `_adedi` | vagon_adedi, yolcu_adedi |
+| Sure alanlari | `_suresi` | yolculuk_suresi, bekleme_suresi |
+| Tarih alanlari | `_tarihi` | tasima_tarihi, yukleme_tarihi |
+| Boolean alanlar | `_mi` / `_mu` | aktif_mi, haftasonu_mu |
+| Parasal degerler | `_tutari` | bilet_tutari, navlun_tutari |
+
+### Anahtar Kurallari
+
+- Tum PK ve FK alanlari `_id` ile biter
+- FK olarak kullanilan, `_id` ile biten her kolon icin bir boyut (d_) tablosu olmak **zorundadir**
+- Fiziksel olarak PK ve FK tanimlari olusturulmaz (Iceberg kisitlamasi), ancak mantiksal modelde iliskiler korunur
+
+### Metadata Kolonlari (Audit)
+
+**ODS Katmani (Mirror):**
+
+| Kolon | Aciklama |
+|-------|----------|
+| yukleme_tarihi | Kaydin eklendigi tarih |
+
+**DWH Katmani (Foundation):**
+
+| Kolon | Aciklama |
+|-------|----------|
+| yukleme_tarihi | Kaydin eklendigi tarih |
+| yukleyen | Kaydi kimin ekledigi |
+| guncelleme_tarihi | Kaydin guncellendigi tarih |
+| guncelleyen | Kaydi kimin guncelledigi |
+| kaynak_tablo | Kaynak tablo bilgisi |
+
+Bu metadata kolonlari **tum hedef tablolara** otomatik eklenir.
+
+### Soft Delete Pattern
+
+Kaynak: `sil` (flag), `siltar` (datetime), `fk_durum` (aktif/pasif)
+Hedef: mapping'e dahil edilir, ETL'de `WHERE sil = 0` filtreleme kurali olarak kullanilir.
 
 ---
 
@@ -206,11 +276,11 @@ Kaynak: sil (flag), siltar (datetime), fk_durum. Hedef: mapping'e dahil, ETL'de 
 | 4 | Source Schema | Her satirda: public, dbo |
 | 5 | Source Table | Her satirda |
 | 6 | Master/Detail | Ilk satir: Master, sonrakiler: bos |
-| 7 | Target Schema | Ilk satir: DW, sonrakiler: bos |
+| 7 | Target Schema | Ilk satir: DWH, sonrakiler: bos |
 | 8 | Source Attribute | Her satirda, metadata'dan dogrulanmis |
-| 9 | Target Physical Name | Her satirda: fact_xxx, dim_xxx |
+| 9 | Target Physical Name | Her satirda: f_xxx, d_xxx |
 | 10 | Target Logical Name | Ilk satirda, sonrakiler: bos |
-| 11 | Target Attribute | Her satirda, snake_case |
+| 11 | Target Attribute | Her satirda, snake_case, lowercase |
 | 12 | Schema Code | Her satirda: MOD_KS001 |
 | 13 | Modul | Her satirda |
 

@@ -2,68 +2,95 @@
 
 Bu dosya, veri ambari attribute-level mapping sureci icin genel kurallari tanimlar.
 
-## 1. Star Schema Siniflandirma Kurallari
+## 1. Katman Mimarisi
 
-### Fact Tablolar (fact_)
+| Katman | Sema | Aciklama |
+|--------|------|----------|
+| Mirror | ODS | Kaynak sistemlerden birebir kopyalanan ham veri |
+| Foundation | DWH | Star schema modeline donusturulmus analitik veri |
+| Staging | STG | Ara donusum tablolari |
+| Logging | ETL | ETL surec loglari |
+
+Mapping sureci ODS → DWH donusumunu tanimlar.
+
+## 2. Star Schema Siniflandirma Kurallari
+
+### Fact Tablolar (f_)
 - Transactional / event verisi icerir
 - Olculebilir degerler (metrik) icerir
 - Zaman bazli kayitlar
-- Ornekler: kazalar, riskler, denetimler, olaylar, hareketler
-- Her fact tablosunda surrogate key (fact_xxx_id) ve ilgili dim FK'lari bulunur
+- Ornekler: f_tasima, f_kaza, f_denetim, f_risk
+- Her fact tablosunda surrogate key (xxx_id) ve ilgili dim FK'lari bulunur
 
-### Dimension Tablolar (dim_)
+### Dimension Tablolar (d_)
 - Referans / lookup verisi icerir
 - Yavaş degisen boyutlar (SCD)
-- Ornekler: personel, birimler, hat/istasyon, kaza turleri, risk kategorileri
-- Her dim tablosunda surrogate key (dim_xxx_id) ve dogal anahtar bulunur
+- Ornekler: d_musteri, d_birim, d_istasyon, d_kaza_turu
+- Her dim tablosunda surrogate key (xxx_id) ve dogal anahtar bulunur
 
-### Bridge Tablolar (bridge_)
+### Bridge Tablolar (b_)
 - M:N (coktan coka) iliskileri cozer
 - Iki veya daha fazla tablonun kesisim kumesi
-- Ornekler: kaza-kok_neden, tehlike-tedbir, personel-sertifikasyon
+- Ornekler: b_kaza_kokneden, b_tehlike_tedbir, b_personel_sertifikasyon
 - Her bridge tablosunda iliskili tablolarin FK'lari bulunur
 
-## 2. Naming Conventions
+## 3. Naming Conventions
 
-### Hedef Tablo Adlari
-- `fact_{isim}` — Ornek: fact_kaza, fact_risk, fact_denetim
-- `dim_{isim}` — Ornek: dim_personel, dim_birim, dim_hat
-- `bridge_{isim1}_{isim2}` — Ornek: bridge_kaza_kokneden
-
-### Hedef Attribute Adlari
-- **snake_case** kullan: `kaza_tarihi`, `risk_skoru`
-- **Turkce karakter kullanma**: ş→s, ç→c, ğ→g, ı→i, ö→o, ü→u, İ→i
+### Genel Kurallar
+- Tum tablo ve kolon isimlerinde **Turkce karakter kullanilmaz** (s→s, c→c, g→g, i→i, o→o, u→u)
+- Tum tablo ve kolon isimlerinde **kucuk harf (lowercase)** kullanilir (Iceberg ve Trino gerekliligi)
 - Kaynak sutun adini mumkun oldugunca koru, sadece convention'a uygun hale getir
-- Kisaltmalar: `tar`→`tarihi`, `ack`→`aciklama` seklinde acilabilir ama zorunlu degil
 
-### FK Sutun Convention
-- `fk_{hedef_tablo}_id` — Ornek: fk_dim_birim_id, fk_dim_personel_id
-- Kaynak sistemdeki FK sutunu hedef tarafta bu formata donusturulur
+### ODS Katmani Tablo Adlari
+- Kaynak sistem ismi prefix olarak kullanilir
+- Ornekler: `kky_zkky_iybs_0288`, `ytp_musteri`
 
-## 3. Audit Sutunlari Standart Mapping
+### Hedef (DWH) Tablo Adlari
+- `f_{isim}` — Ornek: f_tasima, f_kaza, f_risk
+- `d_{isim}` — Ornek: d_musteri, d_birim, d_hat
+- `b_{isim1}_{isim2}` — Ornek: b_kaza_kokneden
 
-### PostgreSQL Kaynak Pattern (KEY vb.)
-| Kaynak | Hedef |
-|--------|-------|
-| created_by / olusturan | olusturan_kullanici |
-| created_date / olusturma_tarihi | olusturma_tarihi |
-| modified_by / guncelleyen | guncelleyen_kullanici |
-| modified_date / guncelleme_tarihi | guncelleme_tarihi |
+### Kolon Postfix Kurallari
 
-### MSSQL Kaynak Pattern (RAY vb.)
-| Kaynak | Hedef |
-|--------|-------|
-| ek | olusturan_kullanici |
-| ektar | olusturma_tarihi |
-| gun | guncelleyen_kullanici |
-| guntar | guncelleme_tarihi |
+| Alan Tipi | Postfix | Ornek |
+|-----------|---------|-------|
+| ID kolonlari (PK/FK) | `_id` | musteri_id, vagon_id |
+| Kod alanlari | `_kodu` | vagon_kodu, istasyon_kodu |
+| Ad alanlari | `_adi` | musteri_adi, istasyon_adi |
+| Durum alanlari | `_durumu` | siparis_durumu, kayit_durumu |
+| Tip alanlari | `_tipi` | vagon_tipi, kaza_tipi |
+| Adet alanlari | `_adedi` | vagon_adedi, yolcu_adedi |
+| Sure alanlari | `_suresi` | yolculuk_suresi, bekleme_suresi |
+| Tarih alanlari | `_tarihi` | tasima_tarihi, yukleme_tarihi |
+| Boolean alanlar | `_mi` / `_mu` | aktif_mi, haftasonu_mu |
+| Parasal degerler | `_tutari` | bilet_tutari, navlun_tutari |
 
-### Standart Audit Eki
-Tum hedef tablolara eklenir:
-- `etl_yuklenme_tarihi` (ETL load timestamp)
-- `etl_kaynak_sistem` (kaynak sistem adi)
+## 4. Anahtar Kurallari
 
-## 4. Soft Delete Pattern
+- Tum PK ve FK alanlari `_id` ile biter
+- FK olarak kullanilan, `_id` ile biten her kolon icin bir boyut (d_) tablosu olmak **zorundadir**
+- Fiziksel olarak PK ve FK tanimlari olusturulmaz (Iceberg kisitlamasi)
+- Mantiksal modelde (Powerdesigner) tablolar arasi iliskiler korunur
+
+## 5. Metadata Kolonlari (Audit)
+
+### ODS Katmani (Mirror)
+| Kolon | Aciklama |
+|-------|----------|
+| yukleme_tarihi | Kaydin eklendigi tarih |
+
+### DWH Katmani (Foundation)
+| Kolon | Aciklama |
+|-------|----------|
+| yukleme_tarihi | Kaydin eklendigi tarih |
+| yukleyen | Kaydi kimin ekledigi |
+| guncelleme_tarihi | Kaydin guncellendigi tarih |
+| guncelleyen | Kaydi kimin guncelledigi |
+| kaynak_tablo | Kaynak tablo bilgisi |
+
+Bu metadata kolonlari tum hedef tablolara otomatik eklenir.
+
+## 6. Soft Delete Pattern
 
 Kaynak sistemde soft delete sutunlari:
 - `sil` (boolean/flag) — Silinmis mi?
@@ -75,7 +102,7 @@ Hedef tarafta:
 - ETL surecinde filtreleme kurali olarak kullanilir: `WHERE sil = 0` veya `WHERE fk_durum = aktif`
 - Mapping'de not olarak belirtilir
 
-## 5. Sablon Alanlari Doldurma Kurallari
+## 7. Sablon Alanlari Doldurma Kurallari
 
 ### Source System (1. sutun)
 - DB tipi yazilir: `PostgreSQL`, `MSSQL`, `Oracle`, `MySQL`
@@ -89,14 +116,14 @@ Hedef tarafta:
 - Yeni hedef tablo basladiginda tekrar `Master`
 
 ### Target Schema (7. sutun)
-- Ilk satir: `DW` (veya kullanicinin belirledigi sema adi)
+- Ilk satir: `DWH` (Foundation katmani semasi)
 - Sonraki satirlar: bos birakilir
 
 ### Schema Code (12. sutun)
 - Format: `{MODUL}_{SENARYO}` — Ornek: KEY_KS001, RAY_KS002
 - Bir attribute birden fazla senaryoda kullaniliyorsa, ilk/ana senaryo yazilir
 
-## 6. Veri Tipi Donusumleri
+## 8. Veri Tipi Donusumleri
 
 Genel kurallar:
 - `varchar/text` → `VARCHAR(n)` (kaynak max_uzunluk korunur)
@@ -107,10 +134,10 @@ Genel kurallar:
 - `timestamp/datetime` → `TIMESTAMP`
 - `date` → `DATE`
 
-## 7. Onemli Kurallar
+## 9. Onemli Kurallar
 
 1. **Metadata'da olmayan sutun UYDURULMAZ** — Her kaynak sutun metadata'da var olmali
-2. **Birden fazla kaynak tablodan ayni hedef tabloya mapping yapilabilir** — Farkli kaynak tablolar ayni fact/dim'i besleyebilir
+2. **Birden fazla kaynak tablodan ayni hedef tabloya mapping yapilabilir** — Farkli kaynak tablolar ayni f_/d_ tablosunu besleyebilir
 3. **Surrogate key'ler hedef tarafta eklenir** — Kaynak sistemde karsiligi olmayabilir, mapping'de `[generated]` olarak isaretlenir
 4. **NULL degerler korunur** — Kaynak NULL ise hedef de NULL olur, ozel donusum yoksa
 5. **Tarih formatlari standartlastirilir** — Hedef tarafta ISO 8601 (YYYY-MM-DD HH:MM:SS)

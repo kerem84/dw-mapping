@@ -72,6 +72,19 @@ cp dw-mapping.skill.md .aider/conventions/dw-mapping.md
 1. Yeni Gem olustur, Talimatlar alanina bu dosyanin tamamini yapistir
 2. Script calistirma sinirli: Gemini SQL ve script kodunu uretir, kullanici lokal olarak calistirir
 
+## Katman Mimarisi
+
+Veri ambari 4 katmandan olusur, her katmanin ayri bir veritabani semasi vardir:
+
+| Katman | Sema | Aciklama |
+|--------|------|----------|
+| Mirror | **ODS** | Kaynak sistemlerden birebir kopyalanan ham veri |
+| Foundation | **DWH** | Star schema modeline donusturulmus analitik veri |
+| Staging | **STG** | Ara donusum tablolari |
+| Logging | **ETL** | ETL surec loglari |
+
+Mapping sureci **ODS → DWH** donusumunu tanimlar.
+
 ## Workflow
 
 Bu skill 6 adimdan olusur. Her adimi sirasiyla takip et.
@@ -137,9 +150,9 @@ Kullanim senaryosu dosyasini oku ve analiz et:
 
 1. **Mantiksal tablo adlarini cikar** — Veri sozlugundeki her veri grubunu belirle
 2. **Fact/Dim/Bridge siniflandirmasi yap** — Mapping Kurallari bolumune bak:
-   - Transactional/event verisi → **fact_**
-   - Referans/lookup verisi → **dim_**
-   - M:N iliski tablolari → **bridge_**
+   - Transactional/event verisi → **f_**
+   - Referans/lookup verisi → **d_**
+   - M:N iliski tablolari → **b_**
 3. **Senaryo adimlarini hedef tablolarla eslestir** — Her senaryo adiminin hangi tablolara ihtiyac duydugunu belirle
 4. **Metadata ile karsilastir** — Mantiksal tablolarin fiziksel karsiliklari metadata'da var mi kontrol et
 
@@ -164,7 +177,7 @@ python scripts/generate_mapping.py \
 ```
 
 Script, olusturulan mapping verisini 13 sutunluk standart formatta Excel'e yazar:
-- Star schema naming convention (fact_, dim_, bridge_)
+- Star schema naming convention (f_, d_, b_)
 - Renk kodlama: fact=mavi (#DBEEF4), dim=yesil (#E2EFDA), bridge=sari (#FFF2CC)
 - Header stili, freeze pane, auto-filter
 
@@ -204,44 +217,79 @@ Rapor icerigi:
 
 ## Mapping Kurallari
 
+### Katman Sema Kurallari
+
+| Katman | Sema | Tablo Prefix Ornegi |
+|--------|------|---------------------|
+| ODS (Mirror) | `ODS` | Kaynak sistem ismi prefix: `kky_zkky_iybs_0288`, `ytp_musteri` |
+| DWH (Foundation) | `DWH` | Star schema prefix: `f_tasima`, `d_musteri` |
+| STG (Staging) | `STG` | Ara tablolar |
+| ETL (Logging) | `ETL` | Log tablolari |
+
 ### Star Schema Siniflandirma
 
 | Tip | On Ek | Icerik | Ornekler |
 |-----|-------|--------|----------|
-| Fact | `fact_` | Transactional/event verisi, olculebilir metrikler | kazalar, riskler, denetimler |
-| Dimension | `dim_` | Referans/lookup verisi, yavas degisen boyutlar | personel, birimler, hat/istasyon |
-| Bridge | `bridge_` | M:N iliskileri cozen kesisim tablolari | kaza-kok_neden, tehlike-tedbir |
+| Fact (Olgu) | `f_` | Transactional/event verisi, olculebilir metrikler | f_tasima, f_kaza, f_denetim |
+| Dimension (Boyut) | `d_` | Referans/lookup verisi, yavas degisen boyutlar | d_musteri, d_birim, d_istasyon |
+| Bridge (Kopru) | `b_` | M:N iliskileri cozen kesisim tablolari | b_kaza_kokneden, b_tehlike_tedbir |
 
 ### Naming Conventions
 
-- **Hedef tablo**: `fact_{isim}`, `dim_{isim}`, `bridge_{isim1}_{isim2}`
-- **Hedef attribute**: snake_case, Turkce karakter yok (s→s, c→c, g→g, i→i, o→o, u→u)
-- **FK sutun**: `fk_{hedef_tablo}_id` — Ornek: `fk_dim_birim_id`
+**Genel kurallar:**
+- Tum tablo ve kolon isimlerinde **Turkce karakter kullanilmaz** (s→s, c→c, g→g, i→i, o→o, u→u)
+- Tum tablo ve kolon isimlerinde **kucuk harf (lowercase)** kullanilir (Iceberg ve Trino gerekliligi)
 - Kaynak sutun adini mumkun oldugunca koru, sadece convention'a uygun hale getir
 
-### Audit Sutunlari Standart Mapping
+**Hedef tablo isimlendirme:**
+- `f_{isim}` — Ornek: f_tasima, f_kaza, f_risk
+- `d_{isim}` — Ornek: d_musteri, d_birim, d_hat
+- `b_{isim1}_{isim2}` — Ornek: b_kaza_kokneden
 
-**PostgreSQL kaynak:**
+**ODS katmani tablo isimlendirme:**
+- Kaynak sistem ismi prefix olarak kullanilir
+- Ornek: `kky_zkky_iybs_0288`, `ytp_musteri`
 
-| Kaynak | Hedef |
-|--------|-------|
-| created_by / olusturan | olusturan_kullanici |
-| created_date / olusturma_tarihi | olusturma_tarihi |
-| modified_by / guncelleyen | guncelleyen_kullanici |
-| modified_date / guncelleme_tarihi | guncelleme_tarihi |
+**Kolon postfix kurallari:**
 
-**MSSQL kaynak:**
+| Alan Tipi | Postfix | Ornek |
+|-----------|---------|-------|
+| ID kolonlari (PK/FK) | `_id` | musteri_id, vagon_id |
+| Kod alanlari | `_kodu` | vagon_kodu, istasyon_kodu |
+| Ad alanlari | `_adi` | musteri_adi, istasyon_adi |
+| Durum alanlari | `_durumu` | siparis_durumu, kayit_durumu |
+| Tip alanlari | `_tipi` | vagon_tipi, kaza_tipi |
+| Adet alanlari | `_adedi` | vagon_adedi, yolcu_adedi |
+| Sure alanlari | `_suresi` | yolculuk_suresi, bekleme_suresi |
+| Tarih alanlari | `_tarihi` | tasima_tarihi, yukleme_tarihi |
+| Boolean alanlar | `_mi` / `_mu` | aktif_mi, haftasonu_mu |
+| Parasal degerler | `_tutari` | bilet_tutari, navlun_tutari |
 
-| Kaynak | Hedef |
-|--------|-------|
-| ek | olusturan_kullanici |
-| ektar | olusturma_tarihi |
-| gun | guncelleyen_kullanici |
-| guntar | guncelleme_tarihi |
+### Anahtar Kurallari
 
-**Standart audit eki** (tum hedef tablolara):
-- `etl_yuklenme_tarihi` (ETL load timestamp)
-- `etl_kaynak_sistem` (kaynak sistem adi)
+- Tum PK ve FK alanlari `_id` ile biter
+- FK olarak kullanilan, `_id` ile biten her kolon icin bir boyut (d_) tablosu olmak **zorundadir**
+- Fiziksel olarak PK ve FK tanimlari olusturulmaz (Iceberg kisitlamasi), ancak mantiksal modelde iliskiler korunur
+
+### Metadata Kolonlari (Audit)
+
+**ODS Katmani (Mirror):**
+
+| Kolon | Aciklama |
+|-------|----------|
+| yukleme_tarihi | Kaydin eklendigi tarih |
+
+**DWH Katmani (Foundation):**
+
+| Kolon | Aciklama |
+|-------|----------|
+| yukleme_tarihi | Kaydin eklendigi tarih |
+| yukleyen | Kaydi kimin ekledigi |
+| guncelleme_tarihi | Kaydin guncellendigi tarih |
+| guncelleyen | Kaydi kimin guncelledigi |
+| kaynak_tablo | Kaynak tablo bilgisi |
+
+Bu metadata kolonlari **tum hedef tablolara** otomatik eklenir.
 
 ### Soft Delete Pattern
 
@@ -280,11 +328,11 @@ Hedef: mapping'e dahil edilir, ETL'de `WHERE sil = 0` filtreleme kurali olarak k
 | 4 | Source Schema | Sema adi | Her satirda: public, dbo |
 | 5 | Source Table | Kaynak tablo | Her satirda |
 | 6 | Master/Detail | Gruplama | Ilk satir: Master, sonrakiler: bos |
-| 7 | Target Schema | Hedef sema | Ilk satir: DW, sonrakiler: bos |
+| 7 | Target Schema | Hedef sema | Ilk satir: DWH, sonrakiler: bos |
 | 8 | Source Attribute | Kaynak sutun | Her satirda, metadata'dan dogrulanmis |
-| 9 | Target Physical Name | Hedef tablo | Her satirda: fact_xxx, dim_xxx |
+| 9 | Target Physical Name | Hedef tablo | Her satirda: f_xxx, d_xxx |
 | 10 | Target Logical Name | Turkce ad | Ilk satirda, sonrakiler: bos |
-| 11 | Target Attribute | Hedef sutun | Her satirda, snake_case |
+| 11 | Target Attribute | Hedef sutun | Her satirda, snake_case, lowercase |
 | 12 | Schema Code | Senaryo kodu | Her satirda: MOD_KS001 |
 | 13 | Modul | Modul adi | Her satirda |
 
@@ -293,17 +341,17 @@ Hedef: mapping'e dahil edilir, ETL'de `WHERE sil = 0` filtreleme kurali olarak k
 ```
 Source Table | Master/Detail | Target Physical Name | Source Attribute | Target Attribute
 ------------ | ------------- | -------------------- | --------------- | ----------------
-kazaraporu   | Master        | fact_kaza            | id              | kaza_id
-kazaraporu   |               | fact_kaza            | kazatarihi      | kaza_tarihi
-birimler     | Master        | dim_birim            | id              | birim_id
-birimler     |               | dim_birim            | birimadi        | birim_adi
+kazaraporu   | Master        | f_kaza               | id              | kaza_id
+kazaraporu   |               | f_kaza               | kazatarihi      | kaza_tarihi
+birimler     | Master        | d_birim              | id              | birim_id
+birimler     |               | d_birim              | birimadi        | birim_adi
 ```
 
 ### Renk Kodlama (Excel)
 
-- **Mavi (#DBEEF4)**: fact_ tablolari
-- **Yesil (#E2EFDA)**: dim_ tablolari
-- **Sari (#FFF2CC)**: bridge_ tablolari
+- **Mavi (#DBEEF4)**: f_ tablolari (fact)
+- **Yesil (#E2EFDA)**: d_ tablolari (dimension)
+- **Sari (#FFF2CC)**: b_ tablolari (bridge)
 - **Header**: Koyu mavi (#4472C4), beyaz bold, Calibri 10pt
 
 ---
@@ -333,18 +381,18 @@ pass=***
 
 | Mantiksal Grup | Fiziksel Tablo | Tip | Hedef Tablo |
 |----------------|----------------|-----|-------------|
-| Kaza Master | kazaincelemeraporu | fact | fact_kaza |
-| Kaza Kok Neden | kazakokneden | bridge | bridge_kaza_kokneden |
-| Birimler | birimler | dim | dim_birim |
-| Risk Matrisi | riskmatris | fact | fact_risk |
+| Kaza Master | kazaincelemeraporu | fact | f_kaza |
+| Kaza Kok Neden | kazakokneden | bridge | b_kaza_kokneden |
+| Birimler | birimler | dim | d_birim |
+| Risk Matrisi | riskmatris | fact | f_risk |
 
 ### Mapping Cikti Ornegi
 
 ```
 Source System | Source System.1 | Source Db   | Source Schema | Source Table       | M/D    | Target Schema | Source Attribute | Target Physical | Target Logical | Target Attribute   | Schema Code | Modul
-PostgreSQL    | KEY             | keyuygulama | public        | kazaincelemeraporu | Master | DW            | id               | fact_kaza       | Kaza Master    | kaza_id            | KEY_KS001   | KEY
-PostgreSQL    | KEY             | keyuygulama | public        | kazaincelemeraporu |        |               | kazatarihi       | fact_kaza       |                | kaza_tarihi        | KEY_KS001   | KEY
-MSSQL         | RAY             | ray_db      | dbo           | riskmatris         | Master | DW            | IND              | fact_risk       | Risk Matrisi   | risk_id            | KEY_KS001   | KEY
+PostgreSQL    | KEY             | keyuygulama | public        | kazaincelemeraporu | Master | DWH           | id               | f_kaza          | Kaza Master    | kaza_id            | KEY_KS001   | KEY
+PostgreSQL    | KEY             | keyuygulama | public        | kazaincelemeraporu |        |               | kazatarihi       | f_kaza          |                | kaza_tarihi        | KEY_KS001   | KEY
+MSSQL         | RAY             | ray_db      | dbo           | riskmatris         | Master | DWH           | IND              | f_risk          | Risk Matrisi   | risk_id            | KEY_KS001   | KEY
 ```
 
 ### Referans Degerler (KEY Modulu)
@@ -657,9 +705,9 @@ Girdi JSON formati:
     "source_schema": "public",
     "source_table": "kazaincelemeraporu",
     "master_detail": "Master",
-    "target_schema": "DW",
+    "target_schema": "DWH",
     "source_attribute": "kazatarihi",
-    "target_physical_name": "fact_kaza",
+    "target_physical_name": "f_kaza",
     "target_logical_name": "Kaza Master",
     "target_attribute": "kaza_tarihi",
     "schema_code": "KEY_KS001",
@@ -720,11 +768,11 @@ def get_row_fill(target_physical_name):
     if not target_physical_name:
         return None
     name = target_physical_name.lower()
-    if name.startswith("fact_"):
+    if name.startswith("f_"):
         return FACT_FILL
-    elif name.startswith("dim_"):
+    elif name.startswith("d_"):
         return DIM_FILL
-    elif name.startswith("bridge_"):
+    elif name.startswith("b_"):
         return BRIDGE_FILL
     return None
 
@@ -775,9 +823,9 @@ def generate_excel(rows, output_path):
     bridges = set()
     for r in rows:
         tp = r.get("target_physical_name", "").lower()
-        if tp.startswith("fact_"): facts.add(tp)
-        elif tp.startswith("dim_"): dims.add(tp)
-        elif tp.startswith("bridge_"): bridges.add(tp)
+        if tp.startswith("f_"): facts.add(tp)
+        elif tp.startswith("d_"): dims.add(tp)
+        elif tp.startswith("b_"): bridges.add(tp)
 
     print(f"Istatistik: {len(facts)} fact, {len(dims)} dim, {len(bridges)} bridge tablo")
     print(f"Toplam attribute: {len(rows)}")

@@ -12,11 +12,11 @@ Bu dosya, Attribute_Level_Mapping.xlsx sablonunun 13 sutununu tanimlar.
 | 4 | Source Schema | Sema adi | public, dbo | Her satirda dolu |
 | 5 | Source Table | Kaynak tablo adi | kazaincelemeraporu | Her satirda dolu |
 | 6 | Master/Detail | Hedef tablo gruplama | Master / (bos) | Ilk satir Master, sonrakiler bos |
-| 7 | Target Schema | Hedef sema | DW | Ilk satir DW, sonrakiler bos |
+| 7 | Target Schema | Hedef sema | DWH | Ilk satir DWH, sonrakiler bos |
 | 8 | Source Attribute | Kaynak sutun adi | kazatarihi | Her satirda dolu, metadata'dan dogrulanmis |
-| 9 | Target Physical Name | Hedef fiziksel tablo adi | fact_kaza | Her satirda dolu |
+| 9 | Target Physical Name | Hedef fiziksel tablo adi | f_kaza | Her satirda dolu |
 | 10 | Target Logical Name | Hedef mantiksal ad (Turkce) | Kaza Master | Ilk satirda dolu, sonrakiler bos |
-| 11 | Target Attribute | Hedef sutun adi (snake_case) | kaza_tarihi | Her satirda dolu |
+| 11 | Target Attribute | Hedef sutun adi (snake_case, lowercase) | kaza_tarihi | Her satirda dolu |
 | 12 | Schema Code | Senaryo kodu | KEY_KS001 | Her satirda dolu |
 | 13 | Modul | Modul adi | KEY | Her satirda dolu |
 
@@ -27,11 +27,11 @@ Bir hedef tablo (Target Physical Name) icin birden fazla attribute satiri olur:
 ```
 Source Table | Master/Detail | Target Physical Name | Source Attribute | Target Attribute
 ------------ | ------------- | -------------------- | --------------- | ----------------
-kazaraporu   | Master        | fact_kaza            | id              | kaza_id
-kazaraporu   |               | fact_kaza            | kazatarihi      | kaza_tarihi
-kazaraporu   |               | fact_kaza            | kazaturid       | fk_dim_kaza_tur_id
-birimler     | Master        | dim_birim            | id              | birim_id
-birimler     |               | dim_birim            | birimadi        | birim_adi
+kazaraporu   | Master        | f_kaza               | id              | kaza_id
+kazaraporu   |               | f_kaza               | kazatarihi      | kaza_tarihi
+kazaraporu   |               | f_kaza               | kazaturid       | kaza_turu_id
+birimler     | Master        | d_birim              | id              | birim_id
+birimler     |               | d_birim              | birimadi        | birim_adi
 ```
 
 - `Master` yalnizca hedef tablonun **ilk satirinda** yazilir
@@ -40,7 +40,7 @@ birimler     |               | dim_birim            | birimadi        | birim_ad
 
 ## Target Schema Mantigi
 
-- `DW` yalnizca hedef tablonun **ilk satirinda** yazilir (Master ile ayni satirda)
+- `DWH` yalnizca hedef tablonun **ilk satirinda** yazilir (Master ile ayni satirda)
 - Sonraki satirlar bos birakilir
 
 ## Target Logical Name Mantigi
@@ -52,9 +52,9 @@ birimler     |               | dim_birim            | birimadi        | birim_ad
 ## Renk Kodlama
 
 Excel'de satirlar hedef tablo tipine gore renklendirilir:
-- **Mavi (#DBEEF4)**: fact_ tablolari
-- **Yesil (#E2EFDA)**: dim_ tablolari
-- **Sari (#FFF2CC)**: bridge_ tablolari
+- **Mavi (#DBEEF4)**: f_ tablolari (fact)
+- **Yesil (#E2EFDA)**: d_ tablolari (dimension)
+- **Sari (#FFF2CC)**: b_ tablolari (bridge)
 
 ## Excel Formatlama
 

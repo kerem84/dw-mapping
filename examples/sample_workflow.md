@@ -49,12 +49,12 @@ Veri sozlugu analizinden sonra olusturulan siniflandirma:
 
 | Mantiksal Grup | Fiziksel Tablo(lar) | Tip | Hedef Tablo |
 |----------------|---------------------|-----|-------------|
-| Kaza Master | kazaincelemeraporu | fact | fact_kaza |
-| Kaza Kok Neden | kazakokneden | bridge | bridge_kaza_kokneden |
-| Birimler | birimler | dim | dim_birim |
-| Kaza Turu | kazaturu | dim | dim_kaza_tur |
-| Risk Matrisi | riskmatris | fact | fact_risk |
-| Tehlike Envanter | tehlikeenvanter | dim | dim_tehlike |
+| Kaza Master | kazaincelemeraporu | fact | f_kaza |
+| Kaza Kok Neden | kazakokneden | bridge | b_kaza_kokneden |
+| Birimler | birimler | dim | d_birim |
+| Kaza Turu | kazaturu | dim | d_kaza_turu |
+| Risk Matrisi | riskmatris | fact | f_risk |
+| Tehlike Envanter | tehlikeenvanter | dim | d_tehlike |
 
 ## 4. Mapping Cikti Ornegi
 
@@ -62,15 +62,27 @@ Uretilen Attribute_Level_Mapping.xlsx ozeti:
 
 ```
 Source System | Source System.1 | Source Db    | Source Schema | Source Table        | M/D    | Target Schema | Source Attribute | Target Physical | Target Logical | Target Attribute    | Schema Code | Modul
-PostgreSQL    | KEY             | keyuygulama  | public        | kazaincelemeraporu  | Master | DW            | id               | fact_kaza       | Kaza Master    | kaza_id             | KEY_KS001   | KEY
-PostgreSQL    | KEY             | keyuygulama  | public        | kazaincelemeraporu  |        |               | kazatarihi       | fact_kaza       |                | kaza_tarihi         | KEY_KS001   | KEY
-PostgreSQL    | KEY             | keyuygulama  | public        | kazaincelemeraporu  |        |               | fk_kazaturid     | fact_kaza       |                | fk_dim_kaza_tur_id  | KEY_KS001   | KEY
-PostgreSQL    | KEY             | keyuygulama  | public        | birimler            | Master | DW            | id               | dim_birim       | Birim          | birim_id            | KEY_KS001   | KEY
-PostgreSQL    | KEY             | keyuygulama  | public        | birimler            |        |               | birimadi         | dim_birim       |                | birim_adi           | KEY_KS001   | KEY
-MSSQL         | RAY             | ray_db       | dbo           | riskmatris          | Master | DW            | IND              | fact_risk       | Risk Matrisi   | risk_id             | KEY_KS001   | KEY
+PostgreSQL    | KEY             | keyuygulama  | public        | kazaincelemeraporu  | Master | DWH           | id               | f_kaza          | Kaza Master    | kaza_id             | KEY_KS001   | KEY
+PostgreSQL    | KEY             | keyuygulama  | public        | kazaincelemeraporu  |        |               | kazatarihi       | f_kaza          |                | kaza_tarihi         | KEY_KS001   | KEY
+PostgreSQL    | KEY             | keyuygulama  | public        | kazaincelemeraporu  |        |               | kazaturid        | f_kaza          |                | kaza_turu_id        | KEY_KS001   | KEY
+PostgreSQL    | KEY             | keyuygulama  | public        | birimler            | Master | DWH           | id               | d_birim         | Birim          | birim_id            | KEY_KS001   | KEY
+PostgreSQL    | KEY             | keyuygulama  | public        | birimler            |        |               | birimadi         | d_birim         |                | birim_adi           | KEY_KS001   | KEY
+MSSQL         | RAY             | ray_db       | dbo           | riskmatris          | Master | DWH           | IND              | f_risk          | Risk Matrisi   | risk_id             | KEY_KS001   | KEY
 ```
 
-## 5. Dogrulama Raporu Ornegi
+## 5. Metadata Kolonlari Ornegi
+
+DWH katmanindaki her hedef tabloya asagidaki metadata kolonlari otomatik eklenir:
+
+| Kolon | Aciklama |
+|-------|----------|
+| yukleme_tarihi | Kaydin eklendigi tarih |
+| yukleyen | Kaydi kimin ekledigi |
+| guncelleme_tarihi | Kaydin guncellendigi tarih |
+| guncelleyen | Kaydi kimin guncelledigi |
+| kaynak_tablo | Kaynak tablo bilgisi |
+
+## 6. Dogrulama Raporu Ornegi
 
 ```markdown
 # KEY Modulu Mapping Dogrulama Raporu

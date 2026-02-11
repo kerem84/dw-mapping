@@ -15,9 +15,9 @@ Girdi JSON formati:
     "source_schema": "public",
     "source_table": "kazaincelemeraporu",
     "master_detail": "Master",
-    "target_schema": "DW",
+    "target_schema": "DWH",
     "source_attribute": "kazatarihi",
-    "target_physical_name": "fact_kaza",
+    "target_physical_name": "f_kaza",
     "target_logical_name": "Kaza Master",
     "target_attribute": "kaza_tarihi",
     "schema_code": "KEY_KS001",
@@ -103,11 +103,11 @@ def get_row_fill(target_physical_name):
     if not target_physical_name:
         return None
     name = target_physical_name.lower()
-    if name.startswith("fact_"):
+    if name.startswith("f_"):
         return FACT_FILL
-    elif name.startswith("dim_"):
+    elif name.startswith("d_"):
         return DIM_FILL
-    elif name.startswith("bridge_"):
+    elif name.startswith("b_"):
         return BRIDGE_FILL
     return None
 
@@ -171,11 +171,11 @@ def generate_excel(rows, output_path):
     bridges = set()
     for r in rows:
         tp = r.get("target_physical_name", "").lower()
-        if tp.startswith("fact_"):
+        if tp.startswith("f_"):
             facts.add(tp)
-        elif tp.startswith("dim_"):
+        elif tp.startswith("d_"):
             dims.add(tp)
-        elif tp.startswith("bridge_"):
+        elif tp.startswith("b_"):
             bridges.add(tp)
 
     print(f"Istatistik: {len(facts)} fact, {len(dims)} dim, {len(bridges)} bridge tablo")
