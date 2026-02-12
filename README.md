@@ -8,7 +8,7 @@ Bir veri ambari projesinde kaynak sistemlerden hedef DW tablolarina attribute-le
 
 1. **Metadata Cekme** — PostgreSQL veya MSSQL veritabanina baglanip tablo/sutun/PK/FK bilgilerini Excel'e cikarir
 2. **Senaryo Analizi** — Veri sozlugu ve kullanim senaryolarini okuyup mantiksal tablolari fact/dim/bridge olarak siniflandirir
-3. **Mapping Uretimi** — 13 sutunluk standart sablonda, renk kodlamali (fact=mavi, dim=yesil, bridge=sari) Excel uretir
+3. **Mapping Uretimi** — 15 sutunluk standart sablonda, renk kodlamali (fact=mavi, dim=yesil, bridge=sari) Excel uretir + entity-level mapping
 4. **Canli Dogrulama** — Uretilen mapping'i kaynak DB uzerinde SQL sorgulariyla dogrular
 5. **Raporlama** — Veri varligi ozeti, kalite kontrolleri ve mapping istatistikleri iceren Markdown rapor olusturur
 
@@ -27,7 +27,8 @@ dw-mapping/
 ├── README.md                           # Bu dosya
 ├── scripts/
 │   ├── extract_metadata.py             # DB metadata cekici (PostgreSQL/MSSQL)
-│   └── generate_mapping.py             # Mapping Excel uretici (13 sutun, renk kodlamali)
+│   ├── generate_mapping.py             # Mapping Excel uretici (15 sutun, renk kodlamali)
+│   └── generate_entity_mapping.py     # Entity-level mapping Excel uretici (8 sutun)
 ├── references/
 │   ├── mapping_guidelines.md           # DW kurallari, naming conventions, audit mapping
 │   └── template_format.md              # Attribute_Level_Mapping sablon sutun tanimlari

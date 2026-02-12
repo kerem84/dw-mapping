@@ -70,7 +70,7 @@ Kullanicidan asagidaki bilgileri iste:
    - Ayri satirlar: host, port, db, user, pass
    - Dogrudan CLI parametreleri
 3. **Kullanim senaryolari / veri sozlugu dosyasi** — txt, docx, md formatinda. Mapping icin hangi tablolarin gerektigini belirler.
-4. **Mapping sablon Excel dosyasi** (opsiyonel) — Varsa mevcut sablonu kullan, yoksa standart 13 sutunluk format uygula.
+4. **Mapping sablon Excel dosyasi** (opsiyonel) — Varsa mevcut sablonu kullan, yoksa standart 15 sutunluk format uygula.
 5. **Calisma dizini** — Cikti dosyalarinin yazilacagi yer.
 
 Eksik bilgi varsa kullaniciya sor, devam etme.
@@ -134,7 +134,7 @@ Metadata + senaryo analizi sonucuna gore mapping satirlarini olustur.
 - Metadata'da olmayan sutun **UYDURULMAZ**
 - Her kaynak sutun metadata'dan dogrulanir
 - Bu dosyanin "Mapping Kurallari" bolumundeki convention'lara uyulur
-- Bu dosyanin "Sablon Format" bolumundeki 13 sutunluk formata uyulur
+- Bu dosyanin "Sablon Format" bolumundeki 15 sutunluk formata uyulur
 
 Ek detay icin: `{SKILL_DIR}/references/mapping_guidelines.md` ve `{SKILL_DIR}/references/template_format.md`
 
@@ -144,10 +144,18 @@ python {SKILL_DIR}/scripts/generate_mapping.py \
   --input mapping_data.json --output ./Attribute_Level_Mapping.xlsx
 ```
 
-Script, olusturulan mapping verisini 13 sutunluk standart formatta Excel'e yazar:
+Script, olusturulan mapping verisini 15 sutunluk standart formatta Excel'e yazar:
 - Star schema naming convention (f_, d_, b_)
 - Renk kodlama: fact=mavi (#DBEEF4), dim=yesil (#E2EFDA), bridge=sari (#FFF2CC)
 - Header stili, freeze pane, auto-filter
+
+Ayni JSON verisinden entity-level mapping de uret:
+```bash
+python {SKILL_DIR}/scripts/generate_entity_mapping.py \
+  --input mapping_data.json --output ./Entity_Level_Mapping.xlsx
+```
+
+Entity mapping, attribute-level verisinden her benzersiz hedef tablo icin tek satir olusturur (8 sutun).
 
 ---
 
@@ -266,7 +274,7 @@ Hedef: mapping'e dahil edilir, ETL'de `WHERE sil = 0` filtreleme kurali olarak k
 
 ---
 
-## Sablon Format (13 Sutun)
+## Sablon Format (15 Sutun)
 
 | # | Sutun | Doldurma |
 |---|-------|----------|
@@ -283,6 +291,8 @@ Hedef: mapping'e dahil edilir, ETL'de `WHERE sil = 0` filtreleme kurali olarak k
 | 11 | Target Attribute | Her satirda, snake_case, lowercase |
 | 12 | Schema Code | Her satirda: MOD_KS001 |
 | 13 | Modul | Her satirda |
+| 14 | Kullanim Senaryosu | Her satirda: KS_001, KS_002 |
+| 15 | Senaryo Adimi | Her satirda: adim aciklamasi |
 
 Renk: fact=mavi(#DBEEF4), dim=yesil(#E2EFDA), bridge=sari(#FFF2CC)
 

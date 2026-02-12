@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Mapping Excel uretici yardimci modul.
-Claude tarafindan olusturulan mapping satirlarini 13 sutunluk standart formatta Excel'e yazar.
+Claude tarafindan olusturulan mapping satirlarini 15 sutunluk standart formatta Excel'e yazar.
 
 Kullanim:
   python generate_mapping.py --input mapping_data.json --output Attribute_Level_Mapping.xlsx
@@ -21,7 +21,9 @@ Girdi JSON formati:
     "target_logical_name": "Kaza Master",
     "target_attribute": "kaza_tarihi",
     "schema_code": "KEY_KS001",
-    "modul": "KEY"
+    "modul": "KEY",
+    "kullanim_senaryosu": "KS_001",
+    "senaryo_adimi": "Kaza-Risk Korelasyon"
   }
 ]
 """
@@ -47,6 +49,8 @@ TEMPLATE_COLUMNS = [
     "Target Attribute",
     "Schema Code",
     "Modul",
+    "Kullanim Senaryosu",
+    "Senaryo Adimi",
 ]
 
 # JSON key -> sutun adi eslesmesi
@@ -64,6 +68,8 @@ JSON_KEY_MAP = {
     "target_attribute": "Target Attribute",
     "schema_code": "Schema Code",
     "modul": "Modul",
+    "kullanim_senaryosu": "Kullanim Senaryosu",
+    "senaryo_adimi": "Senaryo Adimi",
 }
 
 # Renk kodlari
@@ -95,6 +101,8 @@ COLUMN_WIDTHS = {
     "Target Attribute": 28,
     "Schema Code": 14,
     "Modul": 10,
+    "Kullanim Senaryosu": 22,
+    "Senaryo Adimi": 28,
 }
 
 

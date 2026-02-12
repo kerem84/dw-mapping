@@ -61,13 +61,13 @@ Veri sozlugu analizinden sonra olusturulan siniflandirma:
 Uretilen Attribute_Level_Mapping.xlsx ozeti:
 
 ```
-Source System | Source System.1 | Source Db    | Source Schema | Source Table        | M/D    | Target Schema | Source Attribute | Target Physical | Target Logical | Target Attribute    | Schema Code | Modul
-PostgreSQL    | KEY             | keyuygulama  | public        | kazaincelemeraporu  | Master | DWH           | id               | f_kaza          | Kaza Master    | kaza_id             | KEY_KS001   | KEY
-PostgreSQL    | KEY             | keyuygulama  | public        | kazaincelemeraporu  |        |               | kazatarihi       | f_kaza          |                | kaza_tarihi         | KEY_KS001   | KEY
-PostgreSQL    | KEY             | keyuygulama  | public        | kazaincelemeraporu  |        |               | kazaturid        | f_kaza          |                | kaza_turu_id        | KEY_KS001   | KEY
-PostgreSQL    | KEY             | keyuygulama  | public        | birimler            | Master | DWH           | id               | d_birim         | Birim          | birim_id            | KEY_KS001   | KEY
-PostgreSQL    | KEY             | keyuygulama  | public        | birimler            |        |               | birimadi         | d_birim         |                | birim_adi           | KEY_KS001   | KEY
-MSSQL         | RAY             | ray_db       | dbo           | riskmatris          | Master | DWH           | IND              | f_risk          | Risk Matrisi   | risk_id             | KEY_KS001   | KEY
+Source System | Source System.1 | Source Db    | Source Schema | Source Table        | M/D    | Target Schema | Source Attribute | Target Physical | Target Logical | Target Attribute    | Schema Code | Modul | Kullanim Senaryosu | Senaryo Adimi
+PostgreSQL    | KEY             | keyuygulama  | public        | kazaincelemeraporu  | Master | DWH           | id               | f_kaza          | Kaza Master    | kaza_id             | KEY_KS001   | KEY   | KS_001             | Kaza-Risk Korelasyon
+PostgreSQL    | KEY             | keyuygulama  | public        | kazaincelemeraporu  |        |               | kazatarihi       | f_kaza          |                | kaza_tarihi         | KEY_KS001   | KEY   | KS_001             | Kaza-Risk Korelasyon
+PostgreSQL    | KEY             | keyuygulama  | public        | kazaincelemeraporu  |        |               | kazaturid        | f_kaza          |                | kaza_turu_id        | KEY_KS001   | KEY   | KS_001             | Kaza-Risk Korelasyon
+PostgreSQL    | KEY             | keyuygulama  | public        | birimler            | Master | DWH           | id               | d_birim         | Birim          | birim_id            | KEY_KS001   | KEY   | KS_001             | Kaza-Risk Korelasyon
+PostgreSQL    | KEY             | keyuygulama  | public        | birimler            |        |               | birimadi         | d_birim         |                | birim_adi           | KEY_KS001   | KEY   | KS_001             | Kaza-Risk Korelasyon
+MSSQL         | RAY             | ray_db       | dbo           | riskmatris          | Master | DWH           | IND              | f_risk          | Risk Matrisi   | risk_id             | KEY_KS001   | KEY   | KS_001             | Risk Onceliklendirme
 ```
 
 ## 5. Metadata Kolonlari Ornegi

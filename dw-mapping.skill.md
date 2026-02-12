@@ -22,7 +22,7 @@ Genel amacli veri ambari attribute-level mapping skill'i. Herhangi bir modul/pro
 Bu dosya self-contained (script'ler dahil). Herhangi bir AI CLI tool'da kullanilabilir.
 
 **Script'lerin calisma dizinine cikarilmasi:**
-Ilk kullanimda "Embedded Scripts" bolumundeki `extract_metadata.py` ve `generate_mapping.py` dosyalarini calisma dizinine yaz. Sonraki adimlarda bu dosyalari dogrudan `python extract_metadata.py ...` ve `python generate_mapping.py ...` seklinde cagir.
+Ilk kullanimda "Embedded Scripts" bolumundeki `extract_metadata.py`, `generate_mapping.py` ve `generate_entity_mapping.py` dosyalarini calisma dizinine yaz. Sonraki adimlarda bu dosyalari dogrudan `python extract_metadata.py ...`, `python generate_mapping.py ...` ve `python generate_entity_mapping.py ...` seklinde cagir.
 
 **Python bagimliliklar:**
 ```bash
@@ -106,7 +106,7 @@ Kullanicidan asagidaki bilgileri iste:
    - Ayri satirlar: host, port, db, user, pass
    - Dogrudan CLI parametreleri
 3. **Kullanim senaryolari / veri sozlugu dosyasi** — txt, docx, md formatinda. Mapping icin hangi tablolarin gerektigini belirler.
-4. **Mapping sablon Excel dosyasi** (opsiyonel) — Varsa mevcut sablonu kullan, yoksa standart 13 sutunluk format uygula.
+4. **Mapping sablon Excel dosyasi** (opsiyonel) — Varsa mevcut sablonu kullan, yoksa standart 15 sutunluk format uygula.
 5. **Calisma dizini** — Cikti dosyalarinin yazilacagi yer.
 
 Eksik bilgi varsa kullaniciya sor, devam etme.
@@ -168,7 +168,7 @@ Metadata + senaryo analizi sonucuna gore mapping satirlarini olustur.
 - Metadata'da olmayan sutun **UYDURULMAZ**
 - Her kaynak sutun metadata'dan dogrulanir
 - Mapping Kurallari bolumundeki convention'lara uyulur
-- Sablon Format bolumundeki 13 sutunluk formata uyulur
+- Sablon Format bolumundeki 15 sutunluk formata uyulur
 
 Mapping satirlari hazirlandiktan sonra:
 ```bash
@@ -176,10 +176,18 @@ python scripts/generate_mapping.py \
   --input mapping_data.json --output ./Attribute_Level_Mapping.xlsx
 ```
 
-Script, olusturulan mapping verisini 13 sutunluk standart formatta Excel'e yazar:
+Script, olusturulan mapping verisini 15 sutunluk standart formatta Excel'e yazar:
 - Star schema naming convention (f_, d_, b_)
 - Renk kodlama: fact=mavi (#DBEEF4), dim=yesil (#E2EFDA), bridge=sari (#FFF2CC)
 - Header stili, freeze pane, auto-filter
+
+Ayni JSON verisinden entity-level mapping de uret:
+```bash
+python scripts/generate_entity_mapping.py \
+  --input mapping_data.json --output ./Entity_Level_Mapping.xlsx
+```
+
+Entity mapping, attribute-level verisinden her benzersiz hedef tablo icin tek satir olusturur (8 sutun).
 
 ---
 
@@ -318,7 +326,7 @@ Hedef: mapping'e dahil edilir, ETL'de `WHERE sil = 0` filtreleme kurali olarak k
 
 ---
 
-## Sablon Format (13 Sutun)
+## Sablon Format (15 Sutun)
 
 | # | Sutun | Aciklama | Doldurma Kurali |
 |---|-------|----------|-----------------|
@@ -335,6 +343,8 @@ Hedef: mapping'e dahil edilir, ETL'de `WHERE sil = 0` filtreleme kurali olarak k
 | 11 | Target Attribute | Hedef sutun | Her satirda, snake_case, lowercase |
 | 12 | Schema Code | Senaryo kodu | Her satirda: MOD_KS001 |
 | 13 | Modul | Modul adi | Her satirda |
+| 14 | Kullanim Senaryosu | Senaryo kodu | Her satirda: KS_001, KS_002 |
+| 15 | Senaryo Adimi | Adim aciklamasi | Her satirda: adim aciklamasi |
 
 ### Master/Detail Mantigi
 
@@ -389,10 +399,10 @@ pass=***
 ### Mapping Cikti Ornegi
 
 ```
-Source System | Source System.1 | Source Db   | Source Schema | Source Table       | M/D    | Target Schema | Source Attribute | Target Physical | Target Logical | Target Attribute   | Schema Code | Modul
-PostgreSQL    | KEY             | keyuygulama | public        | kazaincelemeraporu | Master | DWH           | id               | f_kaza          | Kaza Master    | kaza_id            | KEY_KS001   | KEY
-PostgreSQL    | KEY             | keyuygulama | public        | kazaincelemeraporu |        |               | kazatarihi       | f_kaza          |                | kaza_tarihi        | KEY_KS001   | KEY
-MSSQL         | RAY             | ray_db      | dbo           | riskmatris         | Master | DWH           | IND              | f_risk          | Risk Matrisi   | risk_id            | KEY_KS001   | KEY
+Source System | Source System.1 | Source Db   | Source Schema | Source Table       | M/D    | Target Schema | Source Attribute | Target Physical | Target Logical | Target Attribute   | Schema Code | Modul | Kullanim Senaryosu | Senaryo Adimi
+PostgreSQL    | KEY             | keyuygulama | public        | kazaincelemeraporu | Master | DWH           | id               | f_kaza          | Kaza Master    | kaza_id            | KEY_KS001   | KEY   | KS_001             | Kaza-Risk Korelasyon
+PostgreSQL    | KEY             | keyuygulama | public        | kazaincelemeraporu |        |               | kazatarihi       | f_kaza          |                | kaza_tarihi        | KEY_KS001   | KEY   | KS_001             | Kaza-Risk Korelasyon
+MSSQL         | RAY             | ray_db      | dbo           | riskmatris         | Master | DWH           | IND              | f_risk          | Risk Matrisi   | risk_id            | KEY_KS001   | KEY   | KS_001             | Risk Onceliklendirme
 ```
 
 ### Referans Degerler (KEY Modulu)
@@ -691,7 +701,7 @@ if __name__ == "__main__":
 #!/usr/bin/env python3
 """
 Mapping Excel uretici yardimci modul.
-Olusturulan mapping satirlarini 13 sutunluk standart formatta Excel'e yazar.
+Olusturulan mapping satirlarini 15 sutunluk standart formatta Excel'e yazar.
 
 Kullanim:
   python generate_mapping.py --input mapping_data.json --output Attribute_Level_Mapping.xlsx
@@ -711,7 +721,9 @@ Girdi JSON formati:
     "target_logical_name": "Kaza Master",
     "target_attribute": "kaza_tarihi",
     "schema_code": "KEY_KS001",
-    "modul": "KEY"
+    "modul": "KEY",
+    "kullanim_senaryosu": "KS_001",
+    "senaryo_adimi": "Kaza-Risk Korelasyon"
   }
 ]
 """
@@ -726,7 +738,7 @@ TEMPLATE_COLUMNS = [
     "Source System", "Source System.1", "Source Db", "Source Schema",
     "Source Table", "Master/Detail", "Target Schema", "Source Attribute",
     "Target Physical Name", "Target Logical Name", "Target Attribute",
-    "Schema Code", "Modul",
+    "Schema Code", "Modul", "Kullanim Senaryosu", "Senaryo Adimi",
 ]
 
 JSON_KEY_MAP = {
@@ -743,6 +755,8 @@ JSON_KEY_MAP = {
     "target_attribute": "Target Attribute",
     "schema_code": "Schema Code",
     "modul": "Modul",
+    "kullanim_senaryosu": "Kullanim Senaryosu",
+    "senaryo_adimi": "Senaryo Adimi",
 }
 
 FACT_FILL = PatternFill(start_color="DBEEF4", end_color="DBEEF4", fill_type="solid")
@@ -761,6 +775,7 @@ COLUMN_WIDTHS = {
     "Source Schema": 14, "Source Table": 28, "Master/Detail": 14,
     "Target Schema": 14, "Source Attribute": 28, "Target Physical Name": 28,
     "Target Logical Name": 24, "Target Attribute": 28, "Schema Code": 14, "Modul": 10,
+    "Kullanim Senaryosu": 22, "Senaryo Adimi": 28,
 }
 
 
@@ -845,6 +860,136 @@ def main():
         sys.exit(1)
 
     generate_excel(rows, args.output)
+    print("Tamamlandi.")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### generate_entity_mapping.py
+
+```python
+#!/usr/bin/env python3
+"""
+Entity Level Mapping Excel uretici.
+Attribute-level mapping JSON verisinden entity-level ozet uretir.
+Her benzersiz hedef tablo (Target Physical Name) icin tek satir yazar.
+
+Kullanim:
+  python generate_entity_mapping.py --input mapping_data.json --output Entity_Level_Mapping.xlsx
+
+Girdi: generate_mapping.py ile ayni JSON formati (mapping_data.json)
+Cikti: 8 sutunluk Entity_Level_Mapping.xlsx
+"""
+
+import json
+import argparse
+import sys
+from collections import OrderedDict
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+TEMPLATE_COLUMNS = [
+    "Target Schema", "Target Physical Name", "Target Logical Name",
+    "Source System", "Source Db", "Source Schema", "Source Table", "Modul",
+]
+
+HEADER_FILL = PatternFill(start_color="A5A5A5", end_color="A5A5A5", fill_type="solid")
+HEADER_FONT = Font(bold=True, size=10, name="Calibri")
+DATA_FONT = Font(size=10, name="Calibri")
+THIN_BORDER = Border(
+    left=Side(style="thin"), right=Side(style="thin"),
+    top=Side(style="thin"), bottom=Side(style="thin"),
+)
+
+COLUMN_WIDTHS = {
+    "Target Schema": 16, "Target Physical Name": 28, "Target Logical Name": 28,
+    "Source System": 15, "Source Db": 18, "Source Schema": 14, "Source Table": 28, "Modul": 10,
+}
+
+
+def aggregate_entities(rows):
+    entities = OrderedDict()
+    for row in rows:
+        target_phys = row.get("target_physical_name", "")
+        if not target_phys:
+            continue
+        if target_phys not in entities:
+            entities[target_phys] = {
+                "target_schema": "dwh",
+                "target_physical_name": target_phys,
+                "target_logical_name": row.get("target_logical_name", ""),
+                "source_system": row.get("source_system", ""),
+                "source_db": row.get("source_db", ""),
+                "source_schema": row.get("source_schema", ""),
+                "source_table": row.get("source_table", ""),
+                "modul": row.get("modul", ""),
+            }
+        else:
+            if not entities[target_phys]["target_logical_name"]:
+                logical = row.get("target_logical_name", "")
+                if logical:
+                    entities[target_phys]["target_logical_name"] = logical
+    return list(entities.values())
+
+
+def generate_entity_excel(entity_rows, output_path):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Source-DWH"
+
+    key_map = {
+        "target_schema": "Target Schema", "target_physical_name": "Target Physical Name",
+        "target_logical_name": "Target Logical Name", "source_system": "Source System",
+        "source_db": "Source Db", "source_schema": "Source Schema",
+        "source_table": "Source Table", "modul": "Modul",
+    }
+    reverse_map = {v: k for k, v in key_map.items()}
+
+    for col_idx, col_name in enumerate(TEMPLATE_COLUMNS, 1):
+        cell = ws.cell(row=1, column=col_idx, value=col_name)
+        cell.fill = HEADER_FILL
+        cell.font = HEADER_FONT
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = THIN_BORDER
+
+    for row_idx, row_data in enumerate(entity_rows, 2):
+        for col_idx, col_name in enumerate(TEMPLATE_COLUMNS, 1):
+            json_key = reverse_map.get(col_name, "")
+            value = row_data.get(json_key, "") if json_key else ""
+            cell = ws.cell(row=row_idx, column=col_idx, value=value)
+            cell.font = DATA_FONT
+            cell.border = THIN_BORDER
+            cell.alignment = Alignment(vertical="center")
+
+    for col_idx, col_name in enumerate(TEMPLATE_COLUMNS, 1):
+        col_letter = ws.cell(row=1, column=col_idx).column_letter
+        ws.column_dimensions[col_letter].width = COLUMN_WIDTHS.get(col_name, 15)
+
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+    ws.row_dimensions[1].height = 30
+
+    wb.save(output_path)
+    print(f"Entity Mapping Excel yazildi: {output_path} ({len(entity_rows)} entity)")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Entity Level Mapping Excel uretici")
+    parser.add_argument("--input", required=True, help="Girdi JSON dosyasi")
+    parser.add_argument("--output", required=True, help="Cikti Excel dosya yolu")
+    args = parser.parse_args()
+
+    with open(args.input, "r", encoding="utf-8") as f:
+        rows = json.load(f)
+
+    if not isinstance(rows, list):
+        print("Hata: JSON dosyasi bir liste (array) icermeli.", file=sys.stderr)
+        sys.exit(1)
+
+    entity_rows = aggregate_entities(rows)
+    generate_entity_excel(entity_rows, args.output)
     print("Tamamlandi.")
 
 

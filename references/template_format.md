@@ -1,6 +1,6 @@
 # Attribute_Level_Mapping Sablon Format Tanimi
 
-Bu dosya, Attribute_Level_Mapping.xlsx sablonunun 13 sutununu tanimlar.
+Bu dosya, Attribute_Level_Mapping.xlsx sablonunun 15 sutununu ve Entity_Level_Mapping.xlsx formatini tanimlar.
 
 ## Sutun Tanimlari
 
@@ -19,6 +19,8 @@ Bu dosya, Attribute_Level_Mapping.xlsx sablonunun 13 sutununu tanimlar.
 | 11 | Target Attribute | Hedef sutun adi (snake_case, lowercase) | kaza_tarihi | Her satirda dolu |
 | 12 | Schema Code | Senaryo kodu | KEY_KS001 | Her satirda dolu |
 | 13 | Modul | Modul adi | KEY | Her satirda dolu |
+| 14 | Kullanim Senaryosu | Tablonun hangi senaryoya ait oldugu | KS_001, KS_002 | Her satirda dolu |
+| 15 | Senaryo Adimi | Senaryonun hangi adiminda kullanildigi | Kaza-Risk Korelasyon | Her satirda dolu |
 
 ## Master/Detail Mantigi
 
@@ -63,3 +65,31 @@ Excel'de satirlar hedef tablo tipine gore renklendirilir:
 - Freeze Pane: A2 (header sabit)
 - Auto-Filter: Tum sutunlarda aktif
 - Header satir yuksekligi: 30px
+
+---
+
+## Entity_Level_Mapping Sablon Formati
+
+Entity seviyesinde mapping: her hedef tablo icin tek satir.
+
+### Sutun Tanimlari
+
+| # | Sutun Adi | Aciklama | Ornek Deger | Doldurma Kurali |
+|---|-----------|----------|-------------|-----------------|
+| 1 | Target Schema | Hedef sema | dwh | Sabit "dwh" (lowercase) |
+| 2 | Target Physical Name | Hedef fiziksel tablo adi | f_kaza | Her satirda dolu |
+| 3 | Target Logical Name | Hedef mantiksal ad (Turkce) | Kaza Master | Her satirda dolu |
+| 4 | Source System | Kaynak veritabani tipi | PostgreSQL | Ilk kaynak satirdan |
+| 5 | Source Db | Veritabani adi | keyuygulama | Ilk kaynak satirdan |
+| 6 | Source Schema | Sema adi | public | Ilk kaynak satirdan |
+| 7 | Source Table | Kaynak tablo adi | kazaincelemeraporu | Ilk kaynak satirdan |
+| 8 | Modul | Modul adi | KEY | Ilk satirdan |
+
+### Excel Formatlama
+
+- Sheet adi: "Source-DWH"
+- Header: Gri arka plan (#A5A5A5), bold yazi
+- Font: Calibri 10pt
+- Freeze Pane: A2 (header sabit)
+- Auto-Filter: Tum sutunlarda aktif
+- Renk kodlama yok (duz beyaz satirlar)

@@ -123,6 +123,18 @@ Hedef tarafta:
 - Format: `{MODUL}_{SENARYO}` — Ornek: KEY_KS001, RAY_KS002
 - Bir attribute birden fazla senaryoda kullaniliyorsa, ilk/ana senaryo yazilir
 
+### Kullanim Senaryosu (14. sutun)
+- Tablonun iliskili oldugu kullanim senaryosunun kodu
+- Format: `KS_001`, `KS_002`, ... (Schema Code'daki senaryo kisminin acik hali)
+- Her satirda dolu olmali
+- Bir attribute birden fazla senaryoda kullaniliyorsa, ana senaryo yazilir
+
+### Senaryo Adimi (15. sutun)
+- Senaryonun hangi adiminda bu tablonun kullanildiginin aciklamasi
+- Ornek: "Kaza-Risk Korelasyon", "Kok Neden Analizi", "Risk Onceliklendirme"
+- Her satirda dolu olmali
+- Kullanim senaryosu analizinden elde edilen adim adi yazilir
+
 ## 8. Veri Tipi Donusumleri
 
 Genel kurallar:
