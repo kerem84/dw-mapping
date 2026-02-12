@@ -101,7 +101,7 @@ Bu skill 6 adimdan olusur. Her adimi sirasiyla takip et.
 Kullanicidan asagidaki bilgileri iste:
 
 1. **Modul/Proje adi** — Ornek: KEY, RAY, SAP, HR
-2. **Connection string dosyasi veya baglanti bilgileri** — Bir veya birden fazla DB olabilir. Desteklenen formatlar:
+2. **Connection string dosyasi veya baglanti bilgileri** — Calisma dizininde gecerli metadata Excel dosyasi varsa bu bilgi **gerekmez** (Adim 2'de otomatik tespit edilir). Yoksa bir veya birden fazla DB olabilir. Desteklenen formatlar:
    - JDBC format: `jdbc:postgresql://host:port/db`
    - Ayri satirlar: host, port, db, user, pass
    - Dogrudan CLI parametreleri
@@ -115,6 +115,19 @@ Eksik bilgi varsa kullaniciya sor, devam etme.
 
 ### Adim 2 — Metadata Cekme
 
+**Once mevcut metadata dosyalarini kontrol et:**
+
+Calisma dizininde `*_db_metadata.xlsx` veya `*_metadata.xlsx` desenine uyan dosyalar ara. Bulunan her dosya icin:
+1. Dosyayi ac ve sutun basliklarini oku
+2. Beklenen 17 sutunun (table_schema, table_name, column_name, ..., referenced_column) mevcut oldugundan emin ol
+3. Veri satirlarinin dolu oldugunu dogrula (bos dosya degilse gecerli say)
+
+**Gecerli metadata dosyasi bulunduysa:**
+- Kullaniciya bilgi ver: "Mevcut metadata dosyasi bulundu: {dosya_adi} ({satir_sayisi} satir). Bu dosya kullanilacak."
+- DB baglantisi adimini **atla**, dogrudan Adim 3'e gec
+- Birden fazla gecerli dosya varsa hepsini listele ve kullan
+
+**Gecerli metadata dosyasi bulunamadiysa:**
 `scripts/extract_metadata.py` scriptini calistir.
 
 Her connection string icin:
@@ -136,7 +149,7 @@ python scripts/extract_metadata.py \
   --connection-file conn.txt --output ./metadata.xlsx
 ```
 
-Metadata cikti sutunlari:
+Metadata cikti sutunlari (17 sutun):
 - table_schema, table_name, column_name, kolon_sirasi, data_type, max_uzunluk
 - numeric_precision, numeric_scale, is_nullable, column_default
 - is_primary_key, pk_constraint, is_foreign_key, fk_constraint
