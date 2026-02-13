@@ -7,15 +7,15 @@ Herhangi bir veritabani ve modul icin **tekrarlanabilir** veri ambari (Data Ware
 Bir veri ambari projesinde kaynak sistemlerden hedef DW tablolarina attribute-level mapping olusturma surecini otomatiklestirir:
 
 1. **Metadata Cekme** — PostgreSQL veya MSSQL veritabanina baglanip tablo/sutun/PK/FK bilgilerini Excel'e cikarir
-2. **Senaryo Analizi** — Veri sozlugu ve kullanim senaryolarini okuyup mantiksal tablolari fact/dim/bridge olarak siniflandirir
-3. **Mapping Uretimi** — 15 sutunluk standart sablonda, renk kodlamali (fact=mavi, dim=yesil, bridge=sari) Excel uretir + entity-level mapping
+2. **Senaryo Analizi** — Veri sozlugu ve kullanim senaryolarini okuyup mantiksal tablolari f_/d_/b_ olarak siniflandirir
+3. **Mapping Uretimi** — 15 sutunluk standart sablonda, renk kodlamali (f_=mavi, d_=yesil, b_=sari) Excel uretir + entity-level mapping
 4. **Canli Dogrulama** — Uretilen mapping'i kaynak DB uzerinde SQL sorgulariyla dogrular
 5. **Raporlama** — Veri varligi ozeti, kalite kontrolleri ve mapping istatistikleri iceren Markdown rapor olusturur
 
 ### Temel Kurallar
 
 - Metadata'da olmayan sutun **uydurulmaz** — her kaynak sutun veritabanindan dogrulanir
-- Star schema naming convention: `fact_`, `dim_`, `bridge_` on ekleri
+- Star schema naming convention: `f_`, `d_`, `b_` on ekleri
 - Hedef attribute'lar snake_case, Turkce karakter icermez
 - Audit sutunlari (olusturan, guncelleyen, tarihler) standart esleme ile map'lenir
 
@@ -27,11 +27,16 @@ dw-mapping/
 ├── README.md                           # Bu dosya
 ├── scripts/
 │   ├── extract_metadata.py             # DB metadata cekici (PostgreSQL/MSSQL)
+│   ├── validate_mapping_data.py        # mapping_data.json dogrulayici
 │   ├── generate_mapping.py             # Mapping Excel uretici (15 sutun, renk kodlamali)
-│   └── generate_entity_mapping.py     # Entity-level mapping Excel uretici (8 sutun)
+│   ├── generate_entity_mapping.py      # Entity-level mapping Excel uretici (8 sutun)
+│   ├── build_mapping_report.py         # Markdown ozet rapor uretici
+│   └── dwmap.py                        # Tek komut CLI orkestratoru
 ├── references/
 │   ├── mapping_guidelines.md           # DW kurallari, naming conventions, audit mapping
 │   └── template_format.md              # Attribute_Level_Mapping sablon sutun tanimlari
+├── tests/
+│   └── test_validate_mapping_data.py   # Temel unit testler
 └── examples/
     └── sample_workflow.md              # Uctan uca ornek akis
 ```
@@ -40,6 +45,31 @@ dw-mapping/
 
 ```bash
 pip install psycopg2-binary pymssql openpyxl pandas
+```
+
+## Desteklenen Veritabanlari
+
+- PostgreSQL
+- MSSQL
+
+> Oracle/MySQL su an script tarafinda desteklenmiyor.
+
+## Tek Komut CLI (P0)
+
+`dwmap.py` P0 kapsaminda eklendi ve extract/validate/generate adimlarini tek komuttan yonetir:
+
+```bash
+# JSON'u dogrula
+python scripts/dwmap.py validate-json --input mapping_data.json
+
+# Attribute + entity mapping uret
+python scripts/dwmap.py generate --input mapping_data.json --output-dir .
+
+# Ozet rapor uret
+python scripts/dwmap.py report --input mapping_data.json --module KEY --output-dir .
+
+# Tek komut: dogrula + uret + rapor
+python scripts/dwmap.py run --input mapping_data.json --module KEY --output-dir .
 ```
 
 ## Kurulum

@@ -32,7 +32,7 @@ import json
 import argparse
 import sys
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, NamedStyle
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 # Sablon sutun sirasi
 TEMPLATE_COLUMNS = [

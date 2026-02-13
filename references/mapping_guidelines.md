@@ -105,7 +105,7 @@ Hedef tarafta:
 ## 7. Sablon Alanlari Doldurma Kurallari
 
 ### Source System (1. sutun)
-- DB tipi yazilir: `PostgreSQL`, `MSSQL`, `Oracle`, `MySQL`
+- DB tipi yazilir: `PostgreSQL`, `MSSQL`
 
 ### Source System.1 (2. sutun)
 - Kaynak sistem kisa adi: `KEY`, `RAY`, `SAP`, `HR`

@@ -131,7 +131,7 @@ Calisma dizininde `*_db_metadata.xlsx` veya `*_metadata.xlsx` desenine uyan dosy
 `scripts/extract_metadata.py` scriptini calistir.
 
 Her connection string icin:
-- DB tipini belirle (PostgreSQL / MSSQL / Oracle / MySQL)
+- DB tipini belirle (PostgreSQL / MSSQL)
 - Ilgili metadata SQL'ini calistir
 - Cikti: `{calisma_dizini}/{kaynak_sistem}_db_metadata.xlsx`
 

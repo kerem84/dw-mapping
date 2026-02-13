@@ -95,7 +95,7 @@ Calisma dizininde `*_db_metadata.xlsx` veya `*_metadata.xlsx` desenine uyan dosy
 `{SKILL_DIR}/scripts/extract_metadata.py` scriptini calistir.
 
 Her connection string icin:
-- DB tipini belirle (PostgreSQL / MSSQL / Oracle / MySQL)
+- DB tipini belirle (PostgreSQL / MSSQL)
 - Ilgili metadata SQL'ini calistir
 - Cikti: `{calisma_dizini}/{kaynak_sistem}_db_metadata.xlsx`
 
@@ -110,6 +110,12 @@ python {SKILL_DIR}/scripts/extract_metadata.py \
 Connection file ile:
 ```bash
 python {SKILL_DIR}/scripts/extract_metadata.py \
+  --connection-file conn.txt --output ./metadata.xlsx
+```
+
+Alternatif olarak orkestrator CLI kullan:
+```bash
+python {SKILL_DIR}/scripts/dwmap.py extract \
   --connection-file conn.txt --output ./metadata.xlsx
 ```
 
@@ -157,6 +163,11 @@ python {SKILL_DIR}/scripts/generate_mapping.py \
   --input mapping_data.json --output ./Attribute_Level_Mapping.xlsx
 ```
 
+Oncesinde JSON dogrulama icin:
+```bash
+python {SKILL_DIR}/scripts/validate_mapping_data.py --input mapping_data.json
+```
+
 Script, olusturulan mapping verisini 15 sutunluk standart formatta Excel'e yazar:
 - Star schema naming convention (f_, d_, b_)
 - Renk kodlama: fact=mavi (#DBEEF4), dim=yesil (#E2EFDA), bridge=sari (#FFF2CC)
@@ -166,6 +177,16 @@ Ayni JSON verisinden entity-level mapping de uret:
 ```bash
 python {SKILL_DIR}/scripts/generate_entity_mapping.py \
   --input mapping_data.json --output ./Entity_Level_Mapping.xlsx
+```
+
+Tek komutla dogrula + her iki Excel'i uret:
+```bash
+python {SKILL_DIR}/scripts/dwmap.py run --input mapping_data.json --module KEY --output-dir .
+```
+
+Sadece markdown ozet rapor icin:
+```bash
+python {SKILL_DIR}/scripts/dwmap.py report --input mapping_data.json --module KEY --output-dir .
 ```
 
 Entity mapping, attribute-level verisinden her benzersiz hedef tablo icin tek satir olusturur (8 sutun).
